@@ -1,51 +1,46 @@
-# Copyright (c) Streamlit Inc. (2018-2022) Snowflake Inc. (2022)
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import streamlit as st
-from streamlit.logger import get_logger
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+#from sklearn.preprocessing import StandardScaler
+import pywt
 
-LOGGER = get_logger(__name__)
+# Load the data
+df = pd.read_excel('testData.xlsx')
 
+# User input for the wavelet type
+w = st.selectbox('Select wavelet type', ['db1', 'db2', 'db3', 'db4', 'db5', 'db6'])
 
-def run():
-    st.set_page_config(
-        page_title="Hello",
-        page_icon="👋",
-    )
+# Wavelet analysis 
+dd = df.iloc[:,-1]
+t = df.Datum
 
-    st.write("# Welcome to Streamlit! 👋")
+lev = 9
+coeffs = pywt.wavedec(dd, w, level=lev)
 
-    st.sidebar.success("Select a demo above.")
+llist = [0,1,2,3,4,5,8,9]
+for i in llist:
+    coeffs[i] = coeffs[i]*0
 
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
+a = pywt.waverec(coeffs,w)
 
+pumpWT = a.copy()
 
-if __name__ == "__main__":
-    run()
+# Create a figure
+fig = go.Figure()
+# Add first line
+fig.add_trace(go.Scatter(x=t, y=dd, mode='lines', name='Line 1'))
+# Add second line
+fig.add_trace(go.Scatter(x=t, y=a[0:], mode='lines', name='Line 2'))
+# Specify the size of the figure
+fig.update_layout(
+    autosize=False,
+    width=1200,  # Width of the figure in pixels
+    height=600,  # Height of the figure in pixels
+    margin=dict(l=50, r=50, b=100, t=100, pad=4),
+    paper_bgcolor="white",
+)
+
+# Show the figure
+st.plotly_chart(fig)
