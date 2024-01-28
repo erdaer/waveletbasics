@@ -10,8 +10,8 @@ st.header('Welcome the to Wavelet testfield')
 # Load the data
 #df = pd.read_excel('testData.xlsx')
 
-st.subheader('Start with the data')
-st.write('Either upload your own data, which contains a data column and at least one value column, or use the default data set')
+st.subheader('Load the data')
+st.write('Either upload your own data, which contains one date column and at least one value column, or use the default data set.')
 # User input for the data file
 uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=['csv', 'xlsx'])
 
@@ -34,8 +34,8 @@ if st.checkbox('Show data?',value=False):
     st.write('This is your data:')
     st.write(df)
 
-st.subheader('Now for some selections')
-st.write('Start with selection columns for date/x and value/y')
+
+st.write('Selection columns for date/x and value/y')
 colsD = st.columns(2)
 
 # User input for the x-axis column
@@ -46,13 +46,14 @@ y_col = colsD[1].selectbox('Select column for y-axis', df.columns,index=1)
 
 st.write(' ')
 st.write(' ')
+st.subheader('Wavelet selection')
 st.write('Then select which wavelets to use')
 # User input for the wavelet type
 colsW = st.columns(2)
 w = colsW[0].selectbox('Select wavelet type 1', ['db1', 'db2', 'db3', 'db4', 'db5', 'db6'],index=0)
 w2 = colsW[1].selectbox('Select wavelet type 2', ['db1', 'db2', 'db3', 'db4', 'db5', 'db6'],index=1)
 
-st.write('Select how many decompositionlevels we should use. This can be limited by the number of data points in your data set.')
+st.write('Select how many decompositionlevels we should use. This can be limited by the number of data points in your data set, otherwise set as high as possible and altern the filtered behaviour with the checkboxes below..')
 # User input for the level
 lev = st.slider('Select number of decomposition levels', 1, 9,value=3)
 
@@ -60,13 +61,18 @@ lev = st.slider('Select number of decomposition levels', 1, 9,value=3)
 llist = list(range(lev+1))
 
 # Ask the user which numbers should be left out
-st.write("Uncheck the levels to be left out. Genereally seen, if higher numbers are unchecked, the funtion can work as a noise filter. If lower numbers are unchecked we instead remove slow trends.")
+st.write("Uncheck the levels to be left out. Genereally seen, if higher numbers are unchecked, the funtion can work as a noise filter, with the strongest filtering being only 0 is checked. If instead lower numbers are unchecked, we remove slow trends (e.g. climate factors).")
+st.write('Note that the signal from the highest number (most noisy) at all level are always identical. ')
 left_out = []
 cols = st.columns(lev+1)
 #st.write(cols[0])
 for i in llist:
-    if cols[i].checkbox(str(i), value=True):
-        left_out.append(i)
+    if i == 0:
+        if cols[i].checkbox(str(i), value=True):
+            left_out.append(i)
+    else:
+        if cols[i].checkbox(str(i), value=False):
+            left_out.append(i)
 
 # Remove the selected numbers from llist
 llist = [i for i in llist if i not in left_out]
@@ -164,13 +170,15 @@ st.plotly_chart(fig)
 # Convert the transformed data to an Excel file
 df=df.drop([x_col + '_year'],axis=1)
 
-df.to_excel('dataWL.xlsx', index=False)
-# Add download buttons for the Excel files
-st.download_button(
-    label="Download transformed data",
-    data=pd.read_excel("dataWL.xlsx").to_csv(index=False).encode(),
-    file_name="dataWL.csv",
-    mime="text/csv",
-)
-st.write('This is the data you will download:')
-st.write(df)
+
+if st.checkbox('Download results?',value=False):
+    df.to_excel('dataWL.xlsx', index=False)
+    # Add download buttons for the Excel files
+    st.download_button(
+        label="Download transformed data",
+        data=pd.read_excel("dataWL.xlsx").to_csv(index=False).encode(),
+        file_name="dataWL.csv",
+        mime="text/csv",
+    )
+    st.write('This is the data you will download:')
+    st.write(df)
