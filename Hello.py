@@ -11,7 +11,7 @@ st.header('Welcome the to Wavelet testfield')
 #df = pd.read_excel('testData.xlsx')
 
 st.subheader('Start with the data')
-st.write('Either upload your own data, which contains a data column and at least on value column, or use the default data set')
+st.write('Either upload your own data, which contains a data column and at least one value column, or use the default data set')
 # User input for the data file
 uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=['csv', 'xlsx'])
 
