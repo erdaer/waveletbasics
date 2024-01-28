@@ -44,6 +44,8 @@ x_col = colsD[0].selectbox('Select column for x-axis (for plotting only)', df.co
 # User input for the y-axis column
 y_col = colsD[1].selectbox('Select column for y-axis', df.columns,index=1)
 
+st.write(' ')
+st.write(' ')
 st.write('Then select which wavelets to use')
 # User input for the wavelet type
 colsW = st.columns(2)
@@ -81,6 +83,10 @@ min_date_year = df[x_col + '_year'].min()
 max_date_year = df[x_col + '_year'].max()
 
 # User input for the date range (as year with one decimal)
+st.write(' ')
+st.write(' ')
+st.subheader('Plotting')
+st.write('Select between which years the plotting will occure. This is only for the plotting, does not effect the tranformations and is there so the plotting range will be kept even if the user inputs above are changed.')
 date_range_year = st.slider('Select date range', min_value=min_date_year, max_value=max_date_year, value=(min_date_year, max_date_year))
 
 coeffs = pywt.wavedec(dd, w, level=lev)
