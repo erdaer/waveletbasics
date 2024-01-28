@@ -6,15 +6,33 @@ import plotly.graph_objects as go
 import pywt
 
 # Load the data
-df = pd.read_excel('testData.xlsx')
+#df = pd.read_excel('testData.xlsx')
+
+
+# User input for the data file
+uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=['csv', 'xlsx'])
+
+if uploaded_file is not None:
+    try:
+        # Load the data from the uploaded file
+        if uploaded_file.name.endswith('.csv'):
+            df = pd.read_csv(uploaded_file)
+        elif uploaded_file.name.endswith('.xlsx'):
+            df = pd.read_excel(uploaded_file)
+    except Exception as e:
+        st.write("There was an error loading the file: ", e)
+else:
+    # Load the default data
+    df = pd.read_excel('testData.xlsx')
+    df=df.iloc[:,1:]
 
 colsD = st.columns(2)
 
 # User input for the x-axis column
-x_col = colsD[0].selectbox('Select column for x-axis (for plotting only)', df.columns)
+x_col = colsD[0].selectbox('Select column for x-axis (for plotting only)', df.columns,index=0)
 
 # User input for the y-axis column
-y_col = colsD[1].selectbox('Select column for y-axis', df.columns)
+y_col = colsD[1].selectbox('Select column for y-axis', df.columns,index=1)
 
 # User input for the wavelet type
 colsW = st.columns(2)
@@ -22,13 +40,13 @@ w = colsW[0].selectbox('Select wavelet type 1', ['db1', 'db2', 'db3', 'db4', 'db
 w2 = colsW[1].selectbox('Select wavelet type 2', ['db1', 'db2', 'db3', 'db4', 'db5', 'db6'],index=1)
 
 # User input for the level
-lev = st.slider('Select level', 1, 9)
+lev = st.slider('Select number of decomposition levels', 1, 9,value=3)
 
 # Create llist as a list from 0 to lev
 llist = list(range(lev+1))
 
 # Ask the user which numbers should be left out
-st.write("Uncheck the numbers to be left out:")
+st.write("Uncheck the levels to be left out:")
 left_out = []
 cols = st.columns(lev+1)
 #st.write(cols[0])
@@ -63,18 +81,20 @@ for i in llist:
 a = pywt.waverec(coeffs,w)
 a2 = pywt.waverec(coeffs2,w2)
 
+# add the result to the data frame
+df.loc[:,w]=a
+df.loc[:,w2]=a2
+
 pumpWT = a.copy()
 
 # Create a figure
 fig = go.Figure()
 # Add first line
-fig.add_trace(go.Scatter(x=t, y=dd, mode='lines', name='Line 1'))
+fig.add_trace(go.Scatter(x=t, y=dd, mode='lines', name='Original data'))
 # Add second line
-fig.add_trace(go.Scatter(x=t, y=a[0:], mode='lines', name='Line 2'))
+fig.add_trace(go.Scatter(x=t, y=a[0:], mode='lines', name=w))
 # Add third line
-fig.add_trace(go.Scatter(x=t, y=a2[0:], mode='lines', name='Line 3'))
-# Update x-axis range
-#fig.update_xaxes(range=[pd.to_datetime(date_range_year[0], format='%Y.%m'), pd.to_datetime(date_range_year[1], format='%Y.%m')])
+fig.add_trace(go.Scatter(x=t, y=a2[0:], mode='lines', name=w2))
 # Specify the size of the figure
 fig.update_layout(
     autosize=False,
@@ -101,9 +121,10 @@ fig.update_xaxes(range=[start_date, end_date])
 # Filter the dataframe based on the selected date range
 df_filtered = df[(df[x_col + '_year'] >= date_range_year[0]) & (df[x_col + '_year'] <= date_range_year[1])]
 
+
 # Calculate the range of y values in the filtered dataframe
-y_min = df_filtered[y_col].min()
-y_max = df_filtered[y_col].max()
+y_min = min([df_filtered[y_col].min(),df_filtered.loc[:,w].min(),df_filtered.loc[:,w2].min()])
+y_max = max([df_filtered[y_col].max(),df_filtered.loc[:,w].max(),df_filtered.loc[:,w2].max()])
 
 # Add 10% of the range to each side
 y_range = y_max - y_min
@@ -118,3 +139,17 @@ fig.update_yaxes(range=[y_min, y_max])
 st.plotly_chart(fig)
 
 #st.write(y_max)
+
+# Convert the transformed data to an Excel file
+df=df.drop([x_col + '_year'],axis=1)
+
+df.to_excel('dataWL.xlsx', index=False)
+# Add download buttons for the Excel files
+st.download_button(
+    label="Download transformed data",
+    data=pd.read_excel("dataWL.xlsx").to_csv(index=False).encode(),
+    file_name="dataWL.csv",
+    mime="text/csv",
+)
+st.write('This is the data you will download:')
+st.write(df)
