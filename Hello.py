@@ -5,10 +5,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pywt
 
+st.header('Welcome the to Wavelet testfield')
+
 # Load the data
 #df = pd.read_excel('testData.xlsx')
 
-
+st.subheader('Start with the data')
+st.write('Either upload your own data, which contains a data column and at least on value column, or use the default data set')
 # User input for the data file
 uploaded_file = st.file_uploader("Choose a CSV or Excel file", type=['csv', 'xlsx'])
 
@@ -26,6 +29,13 @@ else:
     df = pd.read_excel('testData.xlsx')
     df=df.iloc[:,1:]
 
+
+if st.checkbox('Show data?',value=False):
+    st.write('This is your data:')
+    st.write(df)
+
+st.subheader('Now for some selections')
+st.write('Start with selection columns for date/x and value/y')
 colsD = st.columns(2)
 
 # User input for the x-axis column
@@ -34,11 +44,13 @@ x_col = colsD[0].selectbox('Select column for x-axis (for plotting only)', df.co
 # User input for the y-axis column
 y_col = colsD[1].selectbox('Select column for y-axis', df.columns,index=1)
 
+st.write('Then select which wavelets to use')
 # User input for the wavelet type
 colsW = st.columns(2)
 w = colsW[0].selectbox('Select wavelet type 1', ['db1', 'db2', 'db3', 'db4', 'db5', 'db6'],index=0)
 w2 = colsW[1].selectbox('Select wavelet type 2', ['db1', 'db2', 'db3', 'db4', 'db5', 'db6'],index=1)
 
+st.write('Select how many decompositionlevels we should use. This can be limited by the number of data points in your data set.')
 # User input for the level
 lev = st.slider('Select number of decomposition levels', 1, 9,value=3)
 
@@ -46,7 +58,7 @@ lev = st.slider('Select number of decomposition levels', 1, 9,value=3)
 llist = list(range(lev+1))
 
 # Ask the user which numbers should be left out
-st.write("Uncheck the levels to be left out:")
+st.write("Uncheck the levels to be left out. Genereally seen, if higher numbers are unchecked, the funtion can work as a noise filter. If lower numbers are unchecked we instead remove slow trends.")
 left_out = []
 cols = st.columns(lev+1)
 #st.write(cols[0])
@@ -80,6 +92,9 @@ for i in llist:
 
 a = pywt.waverec(coeffs,w)
 a2 = pywt.waverec(coeffs2,w2)
+
+a=a[0:df.shape[0]]
+a2=a2[0:df.shape[0]]
 
 # add the result to the data frame
 df.loc[:,w]=a
